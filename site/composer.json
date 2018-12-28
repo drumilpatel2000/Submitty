@@ -12,7 +12,8 @@
   },
   "require": {
     "twig/twig": "^2.0",
-    "ramsey/uuid": "^3.8"
+    "ramsey/uuid": "^3.8",
+    "ezyang/htmlpurifier": "^4.10"
   },
   "autoload-dev": {
     "psr-4": {
