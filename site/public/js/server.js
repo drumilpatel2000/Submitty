@@ -437,7 +437,7 @@ function setUserSubmittedCode(gradeable_id, changed) {
                             }
                         });
                         $('[name="version_user_1"]', form).find('option').remove().end().append(append_options).val(data.code_version_user_1);
-                        $('[name="code_box_1"]').empty().append($('<textarea/>').html(data.display_code1).text());
+                        $('[name="code_box_1"]').empty().append(data.display_code1);
                     },
                     error: function(e) {
                         alert("Could not load submitted code, please refresh the page and try again.");
@@ -485,7 +485,7 @@ function setUserSubmittedCode(gradeable_id, changed) {
                                 alert(data.error);
                                 return;
                             }
-                            $('[name="code_box_1"]').empty().append($('<textarea/>').html(data.display_code1).text());
+                            $('[name="code_box_1"]').empty().append(data.display_code1);
                         },
                         error: function(e) {
                             alert("Could not load submitted code, please refresh the page and try again.");

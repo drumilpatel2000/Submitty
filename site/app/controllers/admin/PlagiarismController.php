@@ -525,7 +525,7 @@ class PlagiarismController extends AbstractController {
     		else {
     			$color_info = $this->getColorInfo($course_path, $gradeable_id, $user_id_1, $version_user_1, '', '', '1');
     		}
-    		$data= array('display_code1'=> htmlentities($this->getDisplayForCode($file_name, $color_info)), 'code_version_user_1' => $version_user_1, 'max_matching_version' => $max_matching_version, 'active_version_user_1' => $active_version_user_1, 'all_versions_user_1' => $all_versions_user_1, 'ci'=> $color_info);
+    		$data= array('display_code1'=> $this->getDisplayForCode($file_name, $color_info), 'code_version_user_1' => $version_user_1, 'max_matching_version' => $max_matching_version, 'active_version_user_1' => $active_version_user_1, 'all_versions_user_1' => $all_versions_user_1, 'ci'=> $color_info);
         }
         else {
         	$return = array('error' => 'User 1 submission.concatenated for specified version not found.');
@@ -717,7 +717,7 @@ class PlagiarismController extends AbstractController {
 	    }
 	    $j++;
 	    $html .= "</div></div>";
-	    return $html;
+	    return $this->core->getOutput()->getPurifier()->purify($html);
 	}
 
     public function ajaxGetMatchingUsers() {

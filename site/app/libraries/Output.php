@@ -35,6 +35,10 @@ class Output {
     private $twig = null;
     /** @var \Twig_LoaderInterface $twig */
     private $twig_loader = null;
+
+    /** @var \HTMLPurifier $html_purifier */
+    private $html_purifier = null;
+
     /** @var GlobalController $controller */
     private $controller;
 
@@ -58,9 +62,27 @@ class Output {
         $this->render = false;
     }
 
+    public function getPurifier() {
+        return $this->html_purifier;
+    }
+
     public function loadTwig() {
         $template_root = FileUtils::joinPaths(dirname(__DIR__), 'templates');
         $cache_path = FileUtils::joinPaths(dirname(dirname(__DIR__)), 'cache', 'twig');
+
+        $config = \HTMLPurifier_Config::createDefault();
+        $config->set('Cache.DefinitionImpl', null);
+        $config->set('Core.EscapeInvalidTags', true);
+        $config->set('HTML.TidyLevel', 'none');
+        $config->set('Core.AggressivelyFixLt', false);
+        $config->set('Core.LexerImpl', 'DirectLex');
+
+        $def = $config->getHTMLDefinition(true);
+        $def->addAttribute('span', 'onclick', 'Text');
+        $def->addAttribute('span', 'name', 'Text');
+        $def->addAttribute('span', 'style', 'Text');
+
+        $this->html_purifier = new \HTMLPurifier($config);
 
         $this->twig_loader = new \Twig_Loader_Filesystem($template_root);
         $this->twig = new \Twig_Environment($this->twig_loader, [
