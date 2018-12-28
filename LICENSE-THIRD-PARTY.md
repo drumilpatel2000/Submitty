@@ -39,3 +39,8 @@ their relevant licenses.
 &nbsp;&nbsp;&nbsp;&nbsp;Copyright (c) 2012-2018 Ben Ramsey \<ben@benramsey.com\>  
 &nbsp;&nbsp;&nbsp;&nbsp;https://github.com/ramsey/uuid  
 &nbsp;&nbsp;&nbsp;&nbsp;[MIT License](https://github.com/ramsey/uuid/blob/master/LICENSE)
+
+#### ezyang/htmlpurifier
+&nbsp;&nbsp;&nbsp;&nbsp;Copyright (c) 2006-2018 Edward Z. Yang \<ezyang@mit.edu\>
+&nbsp;&nbsp;&nbsp;&nbsp;https://github.com/ezyang/htmlpurifier
+&nbsp;&nbsp;&nbsp;&nbsp;[GNU Lesser General Public License v2.1](https://github.com/ezyang/htmlpurifier/blob/master/LICENSE)
