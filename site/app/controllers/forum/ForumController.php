@@ -310,6 +310,7 @@ class ForumController extends AbstractController {
     //CODE WILL BE CONSOLIDATED IN FUTURE
 
     public function publishThread(){
+        $user_id = $this->core->getUser()->getId();
         $result = array();
         $title = $_POST["title"];
         $thread_post_content = str_replace("\r", "", $_POST["thread_post_content"]);
@@ -317,59 +318,48 @@ class ForumController extends AbstractController {
         $thread_status = $_POST["thread_status"];
         $announcment = (isset($_POST["Announcement"]) && $_POST["Announcement"] == "Announcement" && $this->core->getUser()->getGroup() < 3) ? 1 : 0 ;
         $email_announcement = (isset($_POST["EmailAnnouncement"]) && $_POST["EmailAnnouncement"] == "EmailAnnouncement" && $this->core->getUser()->getGroup() < 3) ? 1 : 0 ;
-        $user_id = $this->core->getUser()->getId();
         $categories_ids  = array();
         foreach ($_POST["cat"] as $category_id) {
             $categories_ids[] = (int)$category_id;
         }
         if($this->core->getQueries()->isUserMuted($user_id)) {
-            if (empty($title) || empty($thread_post_content)) {
-                $this->core->addErrorMessage("One of the fields was empty or bad. Please re-submit your thread.");
-                $result['next_page'] = $this->core->buildUrl(array('component' => 'forum', 'page' => 'create_thread'));
-            } else if (!$this->isValidCategories($categories_ids)) {
-                $this->core->addErrorMessage("You must select valid categories. Please re-submit your thread.");
-                $result['next_page'] = $this->core->buildUrl(array('component' => 'forum', 'page' => 'create_thread'));
+            $this->core->addErrorMessage("You are muted by instructor");
+            $result['next_page'] = $this->core->buildUrl(array('component' => 'forum', 'page' => 'view_thread'));
+        } else if(empty($title) || empty($thread_post_content)){
+            $this->core->addErrorMessage("One of the fields was empty or bad. Please re-submit your thread.");
+            $result['next_page'] = $this->core->buildUrl(array('component' => 'forum', 'page' => 'create_thread'));
+        } else if(!$this->isValidCategories($categories_ids)){
+            $this->core->addErrorMessage("You must select valid categories. Please re-submit your thread.");
+            $result['next_page'] = $this->core->buildUrl(array('component' => 'forum', 'page' => 'create_thread'));
+        } else {
+            $hasGoodAttachment = $this->checkGoodAttachment(true, -1, 'file_input');
+            if($hasGoodAttachment[0] == -1){
+                $result['next_page'] = $hasGoodAttachment[1];
             } else {
-                $hasGoodAttachment = $this->checkGoodAttachment(true, -1, 'file_input');
-                if ($hasGoodAttachment[0] == -1) {
-                    $result['next_page'] = $hasGoodAttachment[1];
-                } else {
-                    // Good Attachment
-                    $result = $this->core->getQueries()->createThread($us, $title, $thread_post_content, $anon, $announcment, $thread_status, $hasGoodAttachment[0], $categories_ids);
-                    $id = $result["thread_id"];
-                    $post_id = $result["post_id"];
-
-                    if ($hasGoodAttachment[0] == 1) {
-
-                        $thread_dir = FileUtils::joinPaths(FileUtils::joinPaths($this->core->getConfig()->getCoursePath(), "forum_attachments"), $id);
-                        FileUtils::createDir($thread_dir);
-
-                        $post_dir = FileUtils::joinPaths($thread_dir, $post_id);
-                        FileUtils::createDir($post_dir);
-
-                        for ($i = 0; $i < count($_FILES["file_input"]["name"]); $i++) {
-                            $target_file = $post_dir . "/" . basename($_FILES["file_input"]["name"][$i]);
-                            move_uploaded_file($_FILES["file_input"]["tmp_name"][$i], $target_file);
-                        }
-
+                // Good Attachment
+                $result = $this->core->getQueries()->createThread($this->core->getUser()->getId(), $title, $thread_post_content, $anon, $announcment, $thread_status, $hasGoodAttachment[0], $categories_ids);
+                $id = $result["thread_id"];
+                $post_id = $result["post_id"];
+                if($hasGoodAttachment[0] == 1) {
+                    $thread_dir = FileUtils::joinPaths(FileUtils::joinPaths($this->core->getConfig()->getCoursePath(), "forum_attachments"), $id);
+                    FileUtils::createDir($thread_dir);
+                    $post_dir = FileUtils::joinPaths($thread_dir, $post_id);
+                    FileUtils::createDir($post_dir);
+                    for($i = 0; $i < count($_FILES["file_input"]["name"]); $i++){
+                        $target_file = $post_dir . "/" . basename($_FILES["file_input"]["name"][$i]);
+                        move_uploaded_file($_FILES["file_input"]["tmp_name"][$i], $target_file);
                     }
-
-                    $notification = new Notification($this->core, array('component' => 'forum', 'type' => $announcment ? 'new_announcement' : 'new_thread', 'thread_id' => $id, 'thread_title' => $title));
-                    $this->core->getQueries()->pushNotification($notification);
-
-                    if ($email_announcement) {
-                        $this->sendEmailAnnouncement($title, $thread_post_content);
-                    }
-                    $result['next_page'] = $this->core->buildUrl(array('component' => 'forum', 'page' => 'view_thread', 'thread_id' => $id));
                 }
+                $notification = new Notification($this->core, array('component' => 'forum', 'type' => $announcment ? 'new_announcement' : 'new_thread', 'thread_id' => $id, 'thread_title' => $title));
+                $this->core->getQueries()->pushNotification($notification);
+                if($email_announcement) {
+                    $this->sendEmailAnnouncement($title, $thread_post_content);
+                }
+                $result['next_page'] = $this->core->buildUrl(array('component' => 'forum', 'page' => 'view_thread', 'thread_id' => $id));
             }
-            $this->core->getOutput()->renderJson($result);
-            return $this->core->getOutput()->getOutput();
         }
-        else{
-            $this->core->addErrorMessage("You do not have permissions to do that.");
-        }
-        return null;
+        $this->core->getOutput()->renderJson($result);
+        return $this->core->getOutput()->getOutput();
     }
 
     private function search(){
@@ -387,7 +377,10 @@ class ForumController extends AbstractController {
         $thread_id = htmlentities($_POST["thread_id"], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $display_option = (!empty($_POST["display_option"])) ? htmlentities($_POST["display_option"], ENT_QUOTES | ENT_HTML5, 'UTF-8') : "tree";
         $anon = (isset($_POST["Anon"]) && $_POST["Anon"] == "Anon") ? 1 : 0;
-        if(empty($post_content) || empty($thread_id)){
+        if($this->core->getQueries()->isUserMuted($user_id)) {
+            $this->core->addErrorMessage("You are not permitted to post into this forum");
+            $result['next_page'] = $this->core->buildUrl(array('component' => 'forum', 'page' => 'view_thread'));
+        } else if(empty($post_content) || empty($thread_id)){
             $this->core->addErrorMessage("There was an error submitting your post. Please re-submit your post.");
             $result['next_page'] = $this->core->buildUrl(array('component' => 'forum', 'page' => 'view_thread'));
         } else if(!$this->core->getQueries()->existsThread($thread_id)) {
@@ -423,10 +416,11 @@ class ForumController extends AbstractController {
                     $notification = new Notification($this->core, array('component' => 'forum', 'type' => 'reply', 'thread_id' => $thread_id, 'post_id' => $parent_id, 'post_content' => $post['content'], 'reply_to' => $post_author, 'child_id' => $post_id, 'anonymous' => $notification_anonymous));
                     $this->core->getQueries()->pushNotification($notification);
                     $result['next_page'] = $this->core->buildUrl(array('component' => 'forum', 'page' => 'view_thread', 'option' => $display_option, 'thread_id' => $thread_id));
-                    $this->core->getOutput()->renderJson($result);
-                    return $this->core->getOutput()->getOutput();
+
                 }
-            }
+        }
+        $this->core->getOutput()->renderJson($result);
+        return $this->core->getOutput()->getOutput();
 
 
     }
@@ -491,8 +485,8 @@ class ForumController extends AbstractController {
     public function alterPost($modifyType){
         $post_id = $_POST["post_id"] ?? $_POST["edit_post_id"];
         if(!($this->checkPostEditAccess($post_id))) {
-                $this->core->addErrorMessage("You do not have permissions to do that.");
-                return;
+            $this->core->addErrorMessage("You do not have permissions to do that.");
+            return;
         }
         if($modifyType == 0) { //delete post or thread
             $thread_id = $_POST["thread_id"];
@@ -531,10 +525,8 @@ class ForumController extends AbstractController {
             $status_edit_thread = $this->editThread();
             $status_edit_post   = $this->editPost();
             $any_changes = false;
-             // Author of first post and thread must be same
-            if(!$this->core->getQueries()->isUserMuted($this->core->getUser()->getId())){
-
-            } else if(is_null($status_edit_thread) && is_null($status_edit_post)) {
+            // Author of first post and thread must be same
+            if(is_null($status_edit_thread) && is_null($status_edit_post)) {
                 $this->core->addErrorMessage("No data submitted. Please try again.");
             } else if(is_null($status_edit_thread) || is_null($status_edit_post)) {
                 $type = is_null($status_edit_thread)?"Post":"Thread";
@@ -574,7 +566,7 @@ class ForumController extends AbstractController {
     private function editThread(){
         // Ensure authentication before call
         $user_id = $this->core->getUser()->getId();
-        if($this->core->getQueries()->isUserMuted($user_id)) {
+        if(!$this->core->getQueries()->isUserMuted($user_id)) {
             if (!empty($_POST["title"])) {
                 $thread_id = $_POST["edit_thread_id"];
                 if (!$this->checkThreadEditAccess($thread_id)) {
@@ -600,7 +592,7 @@ class ForumController extends AbstractController {
     private function editPost(){
         // Ensure authentication before call
         $current_user = $this->core->getUser()->getId();
-        if($this->core->getQueries()->isUserMuted($current_user)) {
+        if(!$this->core->getQueries()->isUserMuted($current_user)) {
             $new_post_content = $_POST["thread_post_content"];
             if (!empty($new_post_content)) {
                 $post_id = $_POST["edit_post_id"];
