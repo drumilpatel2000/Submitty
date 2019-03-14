@@ -9,6 +9,7 @@ use app\libraries\Output;
 use app\libraries\Utils;
 use app\libraries\FileUtils;
 use app\models\User;
+use function PHPSTORM_META\type;
 
 class UsersController extends AbstractController {
     public function run() {
@@ -93,6 +94,7 @@ class UsersController extends AbstractController {
             'user_updated' => $user->isUserUpdated(),
             'instructor_updated' => $user->isInstructorUpdated(),
             'manual_registration' => $user->isManualRegistration(),
+            'muted'=> $user->isMuted(),
             'grading_registration_sections' => $user->getGradingRegistrationSections()
         ));
     }
@@ -188,6 +190,7 @@ class UsersController extends AbstractController {
         //Instructor updated flag tells auto feed to not clobber some of the users data.
         $user->setInstructorUpdated(true);
         $user->setManualRegistration(isset($_POST['manual_registration']));
+//        $user->setMuted(isset($_POST['muted']));
         if (isset($_POST['grading_registration_section'])) {
             $user->setGradingRegistrationSections($_POST['grading_registration_section']);
         }

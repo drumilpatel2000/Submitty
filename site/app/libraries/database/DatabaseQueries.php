@@ -27,6 +27,7 @@ use app\models\SimpleLateUser;
 use app\models\Team;
 use app\models\Course;
 use app\models\SimpleStat;
+use function PHPSTORM_META\type;
 
 
 /**
@@ -3797,5 +3798,14 @@ AND gc_id IN (
               body,
               created)
             VALUES(?, ?, ?, NOW())", $parameters);
+    }
+
+    public function isUserMuted($user_id){
+        $parameters = array($user_id);
+
+        $this->course_db->query("
+        SELECT muted FROM users WHERE user_id = ?",$parameters);
+
+        return $this->course_db->rows()[0]['muted'];
     }
 }

@@ -35,6 +35,8 @@ use app\libraries\Core;
  * @method bool isInstructorUpdated()
  * @method array getGradingRegistrationSections()
  * @method bool isLoaded()
+ * @method void setMuted(bool $flag)
+ * @method bool isMuted()
  */
 class User extends AbstractModel {
 
@@ -91,6 +93,12 @@ class User extends AbstractModel {
      *           to be shifted to a null registration section or rotating section like a dropped student
      */
     protected $manual_registration = false;
+
+    /**
+     * @var bool Was the user supposed to post in discussion forum. If this is FALSE user can post into discussion forum.
+     *           Making it TRUE makes the user not to post in discussion forum but user can able to see forum pages
+     */
+    protected $muted = false;
 
 	/**
 	 * @property
