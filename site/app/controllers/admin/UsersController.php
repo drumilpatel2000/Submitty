@@ -155,7 +155,6 @@ class UsersController extends AbstractController {
             $user = $this->core->loadModel(User::class);
             $user->setId(trim($_POST['user_id']));
         }
-
         $user->setLegalFirstName(trim($_POST['user_firstname']));
         if (isset($_POST['user_preferred_firstname']) && trim($_POST['user_preferred_firstname']) != "") {
             $user->setPreferredFirstName(trim($_POST['user_preferred_firstname']));
@@ -190,14 +189,12 @@ class UsersController extends AbstractController {
         //Instructor updated flag tells auto feed to not clobber some of the users data.
         $user->setInstructorUpdated(true);
         $user->setManualRegistration(isset($_POST['manual_registration']));
-//        $user->setMuted(isset($_POST['muted']));
         if (isset($_POST['grading_registration_section'])) {
             $user->setGradingRegistrationSections($_POST['grading_registration_section']);
         }
         else {
             $user->setGradingRegistrationSections(array());
         }
-
         if ($_POST['edit_user'] == "true") {
             $this->core->getQueries()->updateUser($user, $this->core->getConfig()->getSemester(), $this->core->getConfig()->getCourse());
             $this->core->addSuccessMessage("User '{$user->getId()}' updated");

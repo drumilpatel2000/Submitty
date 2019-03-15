@@ -122,10 +122,11 @@ ORDER BY SUBSTRING(u.registration_section, '^[^0-9]*'), COALESCE(SUBSTRING(u.reg
 
     public function insertCourseUser(User $user, $semester, $course) {
         $params = array($semester, $course, $user->getId(), $user->getGroup(), $user->getRegistrationSection(),
-                        $this->submitty_db->convertBoolean($user->isManualRegistration()));
+                        $this->submitty_db->convertBoolean($user->isManualRegistration()),
+                        $this->submitty_db->convertBoolean($user->isMuted()));
         $this->submitty_db->query("
-INSERT INTO courses_users (semester, course, user_id, user_group, registration_section, manual_registration)
-VALUES (?,?,?,?,?,?)", $params);
+INSERT INTO courses_users (semester, course, user_id, user_group, registration_section, manual_registration,muted)
+VALUES (?,?,?,?,?,?,?)", $params);
 
         $params = array($user->getRotatingSection(), $user->getId());
         $this->course_db->query("UPDATE users SET rotating_section=? WHERE user_id=?", $params);
@@ -153,10 +154,11 @@ WHERE user_id=?", $params);
 
         if (!empty($semester) && !empty($course)) {
             $params = array($user->getGroup(), $user->getRegistrationSection(),
-                            $this->submitty_db->convertBoolean($user->isManualRegistration()), $semester, $course,
+                            $this->submitty_db->convertBoolean($user->isManualRegistration()),
+                            $this->submitty_db->convertBoolean($user->isMuted()), $semester, $course,
                             $user->getId());
             $this->submitty_db->query("
-UPDATE courses_users SET user_group=?, registration_section=?, manual_registration=?
+UPDATE courses_users SET user_group=?, registration_section=?, manual_registration=?,muted=?
 WHERE semester=? AND course=? AND user_id=?", $params);
 
             $params = array($user->getAnonId(), $user->getRotatingSection(), $user->getId());
@@ -1269,6 +1271,7 @@ SELECT round((AVG(g_score) + AVG(autograding)),2) AS avg_score, round(stddev_pop
               u.user_email,
               u.user_group,
               u.manual_registration,
+              u.muted,
               u.last_updated,
               u.grading_registration_sections,
               u.registration_section, u.rotating_section,
@@ -1339,6 +1342,7 @@ SELECT round((AVG(g_score) + AVG(autograding)),2) AS avg_score, round(stddev_pop
               gcd.array_grader_user_email,
               gcd.array_grader_user_group,
               gcd.array_grader_manual_registration,
+              gcd.array_grader_muted,
               gcd.array_grader_last_updated,
               gcd.array_grader_registration_section,
               gcd.array_grader_rotating_section,
@@ -1403,6 +1407,7 @@ SELECT round((AVG(g_score) + AVG(autograding)),2) AS avg_score, round(stddev_pop
                   json_agg(ug.user_email) AS array_grader_user_email,
                   json_agg(ug.user_group) AS array_grader_user_group,
                   json_agg(ug.manual_registration) AS array_grader_manual_registration,
+                  json_agg(ug.muted) AS array_grader_muted,
                   json_agg(ug.last_updated) AS array_grader_last_updated,
                   json_agg(ug.registration_section) AS array_grader_registration_section,
                   json_agg(ug.rotating_section) AS array_grader_rotating_section,
@@ -1543,6 +1548,7 @@ SELECT round((AVG(g_score) + AVG(autograding)),2) AS avg_score, round(stddev_pop
                 'user_email',
                 'user_group',
                 'manual_registration',
+                'muted',
                 'last_updated',
                 'registration_section',
                 'rotating_section',

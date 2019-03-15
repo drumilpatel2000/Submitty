@@ -93,6 +93,7 @@ CREATE TABLE courses_users (
     user_group integer NOT NULL,
     registration_section character varying(255),
     manual_registration boolean DEFAULT false,
+    muted boolean DEFAULT false,
     CONSTRAINT users_user_group_check CHECK ((user_group >= 1) AND (user_group <= 4))
 );
 
@@ -238,9 +239,9 @@ BEGIN
   IF (TG_OP = 'INSERT') THEN
     -- FULL data sync on INSERT of a new user record.
     SELECT * INTO user_row FROM users WHERE user_id=NEW.user_id;
-    query_string := 'INSERT INTO users (user_id, user_firstname, user_preferred_firstname, user_lastname, user_preferred_lastname, user_email, user_group, registration_section, manual_registration) ' ||
+    query_string := 'INSERT INTO users (user_id, user_firstname, user_preferred_firstname, user_lastname, user_preferred_lastname, user_email, user_group, registration_section, manual_registration,muted) ' ||
                     'VALUES (' || quote_literal(user_row.user_id) || ', ' || quote_literal(user_row.user_firstname) || ', ' || quote_nullable(user_row.user_preferred_firstname) || ', ' ||
-                    '' || quote_literal(user_row.user_lastname) || ', ' || quote_nullable(user_row.user_preferred_lastname) || ', ' || quote_literal(user_row.user_email) || ', ' || NEW.user_group || ', ' || quote_nullable(NEW.registration_section) || ', ' || NEW.manual_registration || ')';
+                    '' || quote_literal(user_row.user_lastname) || ', ' || quote_nullable(user_row.user_preferred_lastname) || ', ' || quote_literal(user_row.user_email) || ', ' || NEW.user_group || ', ' || quote_nullable(NEW.registration_section) || ', ' || NEW.manual_registration || ',' || NEW.muted || ')';
     IF query_string IS NULL THEN
       RAISE EXCEPTION 'query_string error in trigger function sync_courses_user() when doing INSERT';
     END IF;
