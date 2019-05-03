@@ -7,6 +7,8 @@ window.addEventListener("load", function() {
   }
 });
 
+window.addEventListener("resize", checkSidebarCollapse); 
+
 /**
  * Acts in a similar fashion to Core->buildUrl() function within the PHP code
  * so that we do not have to pass in fully built URL to JS functions, but rather
@@ -228,7 +230,7 @@ function newUserForm() {
     var form = $("#edit-user-form");
     form.css("display", "block");
     $('[name="edit_user"]', form).val("false");
-    $('[name="user_id"]', form).removeClass('readonly').removeAttr('readonly').val("");
+    $('[name="user_id"]', form).removeClass('readonly').prop('readonly', false).val("");
     $('[name="user_firstname"]', form).val("");
     $('[name="user_preferred_firstname"]', form).val("");
     $('[name="user_lastname"]', form).val("");
@@ -997,7 +999,7 @@ function adminTeamForm(new_team, who_id, reg_section, rot_section, user_assignme
 
 function removeTeamMemberInput(i) {
     var form = $("#admin-team-form");
-    $('[name="user_id_'+i+'"]', form).removeClass('readonly').removeAttr('readonly').val("");
+    $('[name="user_id_'+i+'"]', form).removeClass('readonly').prop('readonly', false).val("");
     $("#remove_member_"+i).remove();
     var student_full = JSON.parse($('#student_full_id').val());
     $('[name="user_id_'+i+'"]', form).autocomplete({
@@ -2627,6 +2629,9 @@ function checkSidebarCollapse() {
     if (size < 1000) {
         $("#sidebar").toggleClass("collapsed", true);
     }
+    else{
+        $("#sidebar").toggleClass("collapsed", false);
+    }
 }
 
 //Called from the DOM collapse button, toggle collapsed and save to localStorage
@@ -2646,6 +2651,9 @@ $(document).ready(function() {
         position: { my: "right+0 bottom+0" },
         content: function () {
             if($("#sidebar").hasClass("collapsed")) {
+                if ($(this).attr("title") === "Collapse Sidebar") {
+                    return "Expand Sidebar";
+                }
                 return $(this).attr("title")
             }
             else {
@@ -2653,7 +2661,6 @@ $(document).ready(function() {
             }
         }
     });
-    $("#nav-sidebar-collapse.collapse-icon").attr("title", "Expand Sidebar");
 
     //Remember sidebar preference
     if (localStorage.sidebar !== "") {
