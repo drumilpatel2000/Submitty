@@ -3,6 +3,7 @@
     <fieldset>
         <input type="radio" class="config_option ignore" name="config_option" id="config_option_defaults" value="defaults"/> <label for="config_option_defaults">Provided autograding configurations</label>
         <input type="radio" class="config_option ignore" name="config_option" id="config_option_uploaded" value="uploaded"/> <label for="config_option_uploaded">Custom uploaded autograding configurations</label>
+        <input type="radio" class="config_option ignore" name="config_option" id="config_option_GUI" value="GUI"/> <label for="config_option_GUI">Graphical user interface for autograding configuration</label>
         {% if repo_name != "" %}
             <input type="radio" class="config_option ignore" name="config_option" id="config_option_repo" value="repo"/> <label for="config_option_repo">Use Private repository ({{ config_repo_name }})</label>
         {% endif %}
@@ -31,6 +32,9 @@
                 {% endfor %}
             </select>
             <a class="btn btn-primary" style="margin-top: 6px" href="{{ upload_config_url }}">Upload a custom autograding configuration</a>
+        </div>
+        <div class="div_select_config" id="div_GUI_configs" style="display: block">
+            {% include('admin/admin_gradeable/AdminAutogradingGUI.twig') %}
         </div>
         <div class="div_select_config" id="div_repository_configs" style="display: block">
             <select class="select_config_path ignore" id="select_repository_config" style="width: 700px;">
@@ -145,6 +149,9 @@
         } else if(checked_val === 'repo'){
             $('#div_repository_configs').show();
             input = "#select_repository_config";
+        } else if(checked_val === 'GUI'){
+            $('#div_GUI_configs').show();
+            input = "#select_GUI_config";
         } else {
             manual_input.prop('disabled', false);
             return;
